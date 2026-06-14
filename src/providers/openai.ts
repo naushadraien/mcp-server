@@ -31,7 +31,7 @@ export class OpenAIProvider implements LLMProvider {
         type: "tool_use",
         toolCalls,
         text: msg.content,
-        rawToolCalls: msg.tool_calls, // ← pass raw tool_calls
+        rawToolCalls: msg.tool_calls,
       };
     }
     return { type: "end", text: msg.content };

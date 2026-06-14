@@ -10,7 +10,6 @@ import type { LLMMessage, LLMProvider, LLMTool } from "./types/common";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_PATH = path.resolve(__dirname, "./mcp-server/index.ts");
 
-// ─── Start MCP Client ─────────────────────────────────────────────────────────
 async function startMcpClient() {
   const transport = new StdioClientTransport({
     command: "bun",
@@ -23,7 +22,6 @@ async function startMcpClient() {
   return client;
 }
 
-// ─── Agent Loop ───────────────────────────────────────────────────────────────
 async function runAgent(
   mcpClient: Client,
   userMessage: string,
@@ -45,7 +43,7 @@ async function runAgent(
 
   const MAX_ITERATIONS = 5;
   let iterations = 0;
-  const isOpenAI = llm.format === "openai"; // ← check provider format
+  const isOpenAI = llm.format === "openai";
 
   while (true) {
     if (iterations >= MAX_ITERATIONS) {
@@ -56,23 +54,19 @@ async function runAgent(
 
     const response = await llm.chat({ messages, tools: llmTools });
 
-    // ─── Final answer ────────────────────────────────────────────────────────
     if (response.type === "end") {
       console.log(response.text);
       return messages;
     }
 
-    // ─── Tool use ────────────────────────────────────────────────────────────
     if (response.type === "tool_use") {
       if (isOpenAI) {
-        // OpenAI format — save assistant message with raw tool_calls first
         messages.push({
           role: "assistant",
           content: response.text ?? null,
           tool_calls: (response as any).rawToolCalls,
         });
 
-        // Each tool result is its own "tool" role message
         for (const tool of response.toolCalls ?? []) {
           console.log(
             `🔧 [${iterations}/${MAX_ITERATIONS}] Calling: ${tool.name}`,
@@ -88,12 +82,11 @@ async function runAgent(
 
           messages.push({
             role: "tool",
-            tool_call_id: tool.id, // ← OpenAI uses tool_call_id
-            content: resultText, // ← plain string
+            tool_call_id: tool.id,
+            content: resultText,
           });
         }
       } else {
-        // Anthropic format — all results in one user message as content array
         const toolResults: any[] = [];
 
         for (const tool of response.toolCalls ?? []) {
@@ -111,7 +104,7 @@ async function runAgent(
 
           toolResults.push({
             type: "tool_result",
-            tool_use_id: tool.id, // ← Anthropic uses tool_use_id
+            tool_use_id: tool.id,
             content: resultText,
           });
         }
@@ -122,7 +115,6 @@ async function runAgent(
       continue;
     }
 
-    // ─── Text (intermediate) ─────────────────────────────────────────────────
     if (response.type === "text") {
       messages.push({ role: "assistant", content: response.text });
     }
@@ -131,7 +123,6 @@ async function runAgent(
 
 const llm = providers[envs.PROVIDER];
 
-// ─── Interactive CLI ──────────────────────────────────────────────────────────
 async function main() {
   console.log("🚀 Starting MCP dev-tools agent...");
 

@@ -11,7 +11,7 @@ export async function callGroq(messages: LLMMessage[], tools: LLMTool[]) {
         Authorization: `Bearer ${envs.GROQ_API_KEY!}`,
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile", // free, fast, smart
+        model: "llama-3.3-70b-versatile",
         max_tokens: 4096,
         tools: tools.map((t) => ({
           type: "function",

@@ -1,21 +1,19 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+import { exec } from "child_process";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { exec } from "child_process";
 import { promisify } from "util";
+import { z } from "zod";
 import { logger } from "../utils/logger";
 
 const execAsync = promisify(exec);
 
-// ─── Create MCP Server ────────────────────────────────────────────────────────
 const server = new McpServer({
   name: "dev-tools-server",
   version: "1.0.0",
 });
 
-// ─── Tool 1: Read File ────────────────────────────────────────────────────────
 server.registerTool(
   "read_file",
   {
@@ -43,7 +41,6 @@ server.registerTool(
   },
 );
 
-// ─── Tool 2: Write File ───────────────────────────────────────────────────────
 server.registerTool(
   "write_file",
   {
@@ -73,7 +70,6 @@ server.registerTool(
   },
 );
 
-// ─── Tool 3: List Directory ───────────────────────────────────────────────────
 server.registerTool(
   "list_directory",
   {
@@ -122,7 +118,6 @@ server.registerTool(
   },
 );
 
-// ─── Tool 4: Run Terminal Command ─────────────────────────────────────────────
 server.registerTool(
   "run_command",
   {
@@ -170,7 +165,6 @@ server.registerTool(
   },
 );
 
-// ─── Tool 5: Search in Files ──────────────────────────────────────────────────
 server.registerTool(
   "search_in_files",
   {
@@ -228,7 +222,6 @@ server.registerTool(
   },
 );
 
-// ─── Tool 6: Create Directory ─────────────────────────────────────────────────
 server.registerTool(
   "create_directory",
   {
@@ -256,7 +249,6 @@ server.registerTool(
   },
 );
 
-// ─── Tool 7: Delete File ──────────────────────────────────────────────────────
 server.registerTool(
   "delete_file",
   {
@@ -282,7 +274,6 @@ server.registerTool(
   },
 );
 
-// ─── Start Server ─────────────────────────────────────────────────────────────
 const transport = new StdioServerTransport();
 await server.connect(transport);
 logger("server", "MCP dev-tools-server started ✓");

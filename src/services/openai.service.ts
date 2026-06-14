@@ -9,7 +9,7 @@ export async function callOpenAI(messages: LLMMessage[], tools: LLMTool[]) {
       Authorization: `Bearer ${envs.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini", // cheapest GPT with good tool use
+      model: "gpt-4o-mini",
       max_tokens: 4096,
       tools: tools.map((t) => ({
         type: "function",

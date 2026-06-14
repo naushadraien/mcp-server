@@ -9,8 +9,8 @@ export async function callOpenRouter(messages: LLMMessage[], tools: LLMTool[]) {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${envs.OPENROUTER_API_KEY}`,
-        "HTTP-Referer": "http://localhost", // required by OpenRouter
-        "X-Title": "MCP Agent", // optional, shows in their dashboard
+        "HTTP-Referer": "http://localhost",
+        "X-Title": "MCP Agent",
       },
       body: JSON.stringify({
         model: "openrouter/free",
