@@ -147,7 +147,7 @@ mcpServers:
     command: bun
     args:
       - run
-      - C:/Projects/ai/mcp-server/src/mcp-server/index.ts
+      - C:/<your-path>/mcp-server/src/mcp-server/index.ts
 ```
 
 Continue will automatically start the MCP server when VS Code opens. Use **Agent mode** in Continue chat to trigger tool calls.
