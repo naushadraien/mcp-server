@@ -44,7 +44,7 @@ mcp-server/
 ## Installation
 
 ```bash
-git clone <your-repo>
+git clone https://github.com/naushadraien/mcp-server.git
 cd mcp-server
 bun install
 ```
