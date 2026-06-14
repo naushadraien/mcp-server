@@ -10,6 +10,26 @@ import type { LLMMessage, LLMProvider, LLMTool } from "./types/common";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_PATH = path.resolve(__dirname, "./mcp-server/index.ts");
 
+// ─── Spinner ──────────────────────────────────────────────────────────────────
+function createSpinner(text: string) {
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+  let i = 0;
+  const timer = setInterval(() => {
+    process.stdout.write(`\r${frames[i++ % frames.length]} ${text}`);
+  }, 80);
+
+  return {
+    update: (newText: string) => {
+      text = newText;
+    },
+    stop: () => {
+      clearInterval(timer);
+      process.stdout.write("\r\x1b[K"); // clear the spinner line
+    },
+  };
+}
+
+// ─── Start MCP Client ─────────────────────────────────────────────────────────
 async function startMcpClient() {
   const transport = new StdioClientTransport({
     command: "bun",
@@ -22,6 +42,7 @@ async function startMcpClient() {
   return client;
 }
 
+// ─── Agent Loop ───────────────────────────────────────────────────────────────
 async function runAgent(
   mcpClient: Client,
   userMessage: string,
@@ -45,17 +66,22 @@ async function runAgent(
   let iterations = 0;
   const isOpenAI = llm.format === "openai";
 
+  const spinner = createSpinner("Thinking...");
+
   while (true) {
     if (iterations >= MAX_ITERATIONS) {
+      spinner.stop();
       console.log("⚠️  Max iterations reached, stopping.");
       return messages;
     }
     iterations++;
 
+    spinner.update("Thinking...");
     const response = await llm.chat({ messages, tools: llmTools });
 
     if (response.type === "end") {
-      console.log(response.text);
+      spinner.stop();
+      console.log(`\n🤖 ${response.text}\n`);
       return messages;
     }
 
@@ -68,9 +94,11 @@ async function runAgent(
         });
 
         for (const tool of response.toolCalls ?? []) {
+          spinner.stop();
           console.log(
             `🔧 [${iterations}/${MAX_ITERATIONS}] Calling: ${tool.name}`,
           );
+          spinner.update(`Running ${tool.name}...`);
 
           const result = await mcpClient.callTool({
             name: tool.name,
@@ -86,13 +114,17 @@ async function runAgent(
             content: resultText,
           });
         }
+
+        spinner.update("Thinking...");
       } else {
         const toolResults: any[] = [];
 
         for (const tool of response.toolCalls ?? []) {
+          spinner.stop();
           console.log(
             `🔧 [${iterations}/${MAX_ITERATIONS}] Calling: ${tool.name}`,
           );
+          spinner.update(`Running ${tool.name}...`);
 
           const result = await mcpClient.callTool({
             name: tool.name,
@@ -110,6 +142,7 @@ async function runAgent(
         }
 
         messages.push({ role: "user", content: toolResults });
+        spinner.update("Thinking...");
       }
 
       continue;
@@ -123,6 +156,7 @@ async function runAgent(
 
 const llm = providers[envs.PROVIDER];
 
+// ─── Interactive CLI ──────────────────────────────────────────────────────────
 async function main() {
   console.log("🚀 Starting MCP dev-tools agent...");
 
