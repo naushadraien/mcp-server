@@ -1,0 +1,20 @@
+{
+  "name": "mcp-server",
+  "module": "mcp-server/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "server": "bun run  src/mcp-server/index.ts",
+    "dev": "bun run src/agent.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  }
+}
