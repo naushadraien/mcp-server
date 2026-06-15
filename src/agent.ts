@@ -68,89 +68,94 @@ async function runAgent(
 
   const spinner = createSpinner("Thinking...");
 
-  while (true) {
-    if (iterations >= MAX_ITERATIONS) {
-      spinner.stop();
-      console.log("⚠️  Max iterations reached, stopping.");
-      return messages;
-    }
-    iterations++;
+  try {
+    while (true) {
+      if (iterations >= MAX_ITERATIONS) {
+        spinner.stop();
+        console.log("⚠️  Max iterations reached, stopping.");
+        return messages;
+      }
+      iterations++;
 
-    spinner.update("Thinking...");
-    const response = await llm.chat({ messages, tools: llmTools });
+      spinner.update("Thinking...");
+      const response = await llm.chat({ messages, tools: llmTools });
 
-    if (response.type === "end") {
-      spinner.stop();
-      console.log(`\n🤖 ${response.text}\n`);
-      return messages;
-    }
-
-    if (response.type === "tool_use") {
-      if (isOpenAI) {
-        messages.push({
-          role: "assistant",
-          content: response.text ?? null,
-          tool_calls: (response as any).rawToolCalls,
-        });
-
-        for (const tool of response.toolCalls ?? []) {
-          spinner.stop();
-          console.log(
-            `🔧 [${iterations}/${MAX_ITERATIONS}] Calling: ${tool.name}`,
-          );
-          spinner.update(`Running ${tool.name}...`);
-
-          const result = await mcpClient.callTool({
-            name: tool.name,
-            arguments: tool.input,
-          });
-
-          const resultText =
-            (result.content as any[])?.[0]?.text ?? "No result";
-
-          messages.push({
-            role: "tool",
-            tool_call_id: tool.id,
-            content: resultText,
-          });
-        }
-
-        spinner.update("Thinking...");
-      } else {
-        const toolResults: any[] = [];
-
-        for (const tool of response.toolCalls ?? []) {
-          spinner.stop();
-          console.log(
-            `🔧 [${iterations}/${MAX_ITERATIONS}] Calling: ${tool.name}`,
-          );
-          spinner.update(`Running ${tool.name}...`);
-
-          const result = await mcpClient.callTool({
-            name: tool.name,
-            arguments: tool.input,
-          });
-
-          const resultText =
-            (result.content as any[])?.[0]?.text ?? "No result";
-
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: tool.id,
-            content: resultText,
-          });
-        }
-
-        messages.push({ role: "user", content: toolResults });
-        spinner.update("Thinking...");
+      if (response.type === "end") {
+        spinner.stop();
+        console.log(`\n🤖 ${response.text}\n`);
+        return messages;
       }
 
-      continue;
-    }
+      if (response.type === "tool_use") {
+        if (isOpenAI) {
+          messages.push({
+            role: "assistant",
+            content: response.text ?? null,
+            tool_calls: (response as any).rawToolCalls,
+          });
 
-    if (response.type === "text") {
-      messages.push({ role: "assistant", content: response.text });
+          for (const tool of response.toolCalls ?? []) {
+            spinner.stop();
+            console.log(
+              `🔧 [${iterations}/${MAX_ITERATIONS}] Calling: ${tool.name}`,
+            );
+            spinner.update(`Running ${tool.name}...`);
+
+            const result = await mcpClient.callTool({
+              name: tool.name,
+              arguments: tool.input,
+            });
+
+            const resultText =
+              (result.content as any[])?.[0]?.text ?? "No result";
+
+            messages.push({
+              role: "tool",
+              tool_call_id: tool.id,
+              content: resultText,
+            });
+          }
+
+          spinner.update("Thinking...");
+        } else {
+          const toolResults: any[] = [];
+
+          for (const tool of response.toolCalls ?? []) {
+            spinner.stop();
+            console.log(
+              `🔧 [${iterations}/${MAX_ITERATIONS}] Calling: ${tool.name}`,
+            );
+            spinner.update(`Running ${tool.name}...`);
+
+            const result = await mcpClient.callTool({
+              name: tool.name,
+              arguments: tool.input,
+            });
+
+            const resultText =
+              (result.content as any[])?.[0]?.text ?? "No result";
+
+            toolResults.push({
+              type: "tool_result",
+              tool_use_id: tool.id,
+              content: resultText,
+            });
+          }
+
+          messages.push({ role: "user", content: toolResults });
+          spinner.update("Thinking...");
+        }
+
+        continue;
+      }
+
+      if (response.type === "text") {
+        messages.push({ role: "assistant", content: response.text });
+      }
     }
+  } catch (err) {
+    spinner.stop();
+    throw err;
   }
 }
 
